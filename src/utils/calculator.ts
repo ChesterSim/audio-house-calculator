@@ -180,9 +180,9 @@ export class AudioHouseCalculator {
   items: Item[];
   itemsTracker: ItemsTracker;
 
-  constructor(items: Item[] = []) {
+  constructor(items: Item[] = [], startingECashback: number = 0) {
     this.items = items.map((item) => item.clone());
-    this.itemsTracker = new ItemsTracker([], 0, 0);
+    this.itemsTracker = new ItemsTracker([], startingECashback, 0);
   }
 
   calculate(): ItemsTracker {

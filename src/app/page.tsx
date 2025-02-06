@@ -18,6 +18,7 @@ type GlobalRates = {
   eCashbackEarnRateBase: number;
   eCashbackSpendRatePerBase: number;
   eCashbackSpendRateBase: number;
+  startingECashback: number;
 };
 
 export default function Home() {
@@ -28,6 +29,7 @@ export default function Home() {
         eCashbackEarnRateBase: 100,
         eCashbackSpendRatePerBase: 20,
         eCashbackSpendRateBase: 100,
+        startingECashback: 0,
       };
 
     return JSON.parse(
@@ -37,6 +39,7 @@ export default function Home() {
           eCashbackEarnRateBase: 100,
           eCashbackSpendRatePerBase: 20,
           eCashbackSpendRateBase: 100,
+          startingECashback: 0,
         }),
     );
   });
@@ -120,7 +123,10 @@ export default function Home() {
       return item;
     });
 
-    const calculator = new AudioHouseCalculator(formattedItems);
+    const calculator = new AudioHouseCalculator(
+      formattedItems,
+      globalRates.startingECashback,
+    );
     const calculationResult = calculator.calculate();
     setResult(calculationResult);
   };
@@ -131,6 +137,20 @@ export default function Home() {
       <div className="mb-8 p-4 border rounded-lg shadow-sm bg-white">
         <h2 className="text-lg font-semibold mb-4">Global Settings</h2>
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+          <div>
+            <label className="block text-sm font-medium mb-1 text-black">
+              Starting E-Cashback
+            </label>
+            <input
+              type="number"
+              value={globalRates.startingECashback}
+              onChange={(e) =>
+                updateGlobalRate("startingECashback", e.target.value)
+              }
+              className="w-full p-2 border rounded text-black"
+              placeholder="0"
+            />
+          </div>
           <div>
             <label className="block text-sm font-medium mb-1 text-black">
               Earn Rate Per Base
