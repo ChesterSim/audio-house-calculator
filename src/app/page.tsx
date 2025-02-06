@@ -1,101 +1,353 @@
-import Image from "next/image";
+"use client";
+
+import { useState } from "react";
+import { AudioHouseCalculator, Item, ItemsTracker } from "@/utils/calculator";
+
+type FormItem = {
+  id: string;
+  name: string;
+  cost: number;
+  eCashbackEarnRatePerBase: number | null;
+  eCashbackEarnRateBase: number | null;
+  eCashbackSpendRatePerBase: number | null;
+  eCashbackSpendRateBase: number | null;
+};
+
+type GlobalRates = {
+  eCashbackEarnRatePerBase: number;
+  eCashbackEarnRateBase: number;
+  eCashbackSpendRatePerBase: number;
+  eCashbackSpendRateBase: number;
+};
 
 export default function Home() {
-  return (
-    <div className="grid grid-rows-[20px_1fr_20px] items-center justify-items-center min-h-screen p-8 pb-20 gap-16 sm:p-20 font-[family-name:var(--font-geist-sans)]">
-      <main className="flex flex-col gap-8 row-start-2 items-center sm:items-start">
-        <Image
-          className="dark:invert"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={180}
-          height={38}
-          priority
-        />
-        <ol className="list-inside list-decimal text-sm text-center sm:text-left font-[family-name:var(--font-geist-mono)]">
-          <li className="mb-2">
-            Get started by editing{" "}
-            <code className="bg-black/[.05] dark:bg-white/[.06] px-1 py-0.5 rounded font-semibold">
-              src/app/page.tsx
-            </code>
-            .
-          </li>
-          <li>Save and see your changes instantly.</li>
-        </ol>
+  const [globalRates, setGlobalRates] = useState<GlobalRates>({
+    eCashbackEarnRatePerBase: 20,
+    eCashbackEarnRateBase: 100,
+    eCashbackSpendRatePerBase: 20,
+    eCashbackSpendRateBase: 100,
+  });
 
-        <div className="flex gap-4 items-center flex-col sm:flex-row">
-          <a
-            className="rounded-full border border-solid border-transparent transition-colors flex items-center justify-center bg-foreground text-background gap-2 hover:bg-[#383838] dark:hover:bg-[#ccc] text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={20}
-              height={20}
+  const [items, setItems] = useState<FormItem[]>([]);
+  const [result, setResult] = useState<ItemsTracker | null>(null);
+
+  const updateGlobalRate = (field: keyof GlobalRates, value: string) => {
+    setGlobalRates({
+      ...globalRates,
+      [field]: value === "" ? 1 : Number(value),
+    });
+  };
+
+  const addItem = () => {
+    setItems([
+      ...items,
+      {
+        id: Math.random().toString(),
+        name: "",
+        cost: 0,
+        eCashbackEarnRatePerBase: null,
+        eCashbackEarnRateBase: null,
+        eCashbackSpendRatePerBase: null,
+        eCashbackSpendRateBase: null,
+      },
+    ]);
+  };
+
+  const removeItem = (id: string) => {
+    if (items.length > 1) {
+      setItems(items.filter((item) => item.id !== id));
+    }
+  };
+
+  const updateItem = (
+    id: string,
+    field: keyof FormItem,
+    value: string | number,
+  ) => {
+    setItems(
+      items.map((item) =>
+        item.id === id
+          ? {
+              ...item,
+              [field]:
+                field === "name" ? value : value === "" ? null : Number(value),
+            }
+          : item,
+      ),
+    );
+  };
+
+  const calculateLowestSum = () => {
+    const formattedItems = items.map((itemData) => {
+      const item = new Item({
+        name: itemData.name,
+        cost: itemData.cost,
+        eCashbackEarnRatePerBase:
+          itemData.eCashbackEarnRatePerBase ??
+          globalRates.eCashbackEarnRatePerBase,
+        eCashbackEarnRateBase:
+          itemData.eCashbackEarnRateBase ?? globalRates.eCashbackEarnRateBase,
+        eCashbackSpendRatePerBase:
+          itemData.eCashbackSpendRatePerBase ??
+          globalRates.eCashbackSpendRatePerBase,
+        eCashbackSpendRateBase:
+          itemData.eCashbackSpendRateBase ?? globalRates.eCashbackSpendRateBase,
+      });
+
+      return item;
+    });
+
+    const calculator = new AudioHouseCalculator(formattedItems);
+    const calculationResult = calculator.calculate();
+    setResult(calculationResult);
+  };
+
+  return (
+    <div className="container mx-auto p-4 text-black">
+      <div className="mb-8 p-4 border rounded-lg shadow-sm bg-white">
+        <h2 className="text-lg font-semibold mb-4">Global Settings</h2>
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+          <div>
+            <label className="block text-sm font-medium mb-1 text-black">
+              Global Earn Rate Per Base
+            </label>
+            <input
+              type="number"
+              value={globalRates.eCashbackEarnRatePerBase}
+              onChange={(e) =>
+                updateGlobalRate("eCashbackEarnRatePerBase", e.target.value)
+              }
+              className="w-full p-2 border rounded text-black"
+              placeholder="20"
             />
-            Deploy now
-          </a>
-          <a
-            className="rounded-full border border-solid border-black/[.08] dark:border-white/[.145] transition-colors flex items-center justify-center hover:bg-[#f2f2f2] dark:hover:bg-[#1a1a1a] hover:border-transparent text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5 sm:min-w-44"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Read our docs
-          </a>
+          </div>
+          <div>
+            <label className="block text-sm font-medium mb-1 text-black">
+              Global Earn Rate Base
+            </label>
+            <input
+              type="number"
+              value={globalRates.eCashbackEarnRateBase}
+              onChange={(e) =>
+                updateGlobalRate("eCashbackEarnRateBase", e.target.value)
+              }
+              className="w-full p-2 border rounded text-black"
+              placeholder="100"
+            />
+          </div>
+          <div>
+            <label className="block text-sm font-medium mb-1 text-black">
+              Global Spend Rate Per Base
+            </label>
+            <input
+              type="number"
+              value={globalRates.eCashbackSpendRatePerBase}
+              onChange={(e) =>
+                updateGlobalRate("eCashbackSpendRatePerBase", e.target.value)
+              }
+              className="w-full p-2 border rounded text-black"
+              placeholder="20"
+            />
+          </div>
+          <div>
+            <label className="block text-sm font-medium mb-1 text-black">
+              Global Spend Rate Base
+            </label>
+            <input
+              type="number"
+              value={globalRates.eCashbackSpendRateBase}
+              onChange={(e) =>
+                updateGlobalRate("eCashbackSpendRateBase", e.target.value)
+              }
+              className="w-full p-2 border rounded text-black"
+              placeholder="100"
+            />
+          </div>
         </div>
-      </main>
-      <footer className="row-start-3 flex gap-6 flex-wrap items-center justify-center">
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
+      </div>
+
+      <div className="space-y-4">
+        {items.map((item) => (
+          <div
+            key={item.id}
+            className="p-4 border rounded-lg shadow-sm bg-white space-y-4"
+          >
+            <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+              <div>
+                <label className="block text-sm font-medium mb-1 text-black">
+                  Name
+                </label>
+                <input
+                  type="text"
+                  value={item.name}
+                  onChange={(e) => updateItem(item.id, "name", e.target.value)}
+                  className="w-full p-2 border rounded text-black"
+                  placeholder="Item name"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium mb-1 text-black">
+                  Cost
+                </label>
+                <input
+                  type="number"
+                  value={item.cost}
+                  onChange={(e) => updateItem(item.id, "cost", e.target.value)}
+                  className="w-full p-2 border rounded text-black"
+                  placeholder="0"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium mb-1 text-black">
+                  Earn Rate Per Base
+                </label>
+                <input
+                  type="number"
+                  value={item.eCashbackEarnRatePerBase ?? ""}
+                  onChange={(e) =>
+                    updateItem(
+                      item.id,
+                      "eCashbackEarnRatePerBase",
+                      e.target.value,
+                    )
+                  }
+                  className="w-full p-2 border rounded text-black"
+                  placeholder="$20"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium mb-1 text-black">
+                  Earn Rate Base
+                </label>
+                <input
+                  type="number"
+                  value={item.eCashbackEarnRateBase ?? ""}
+                  onChange={(e) =>
+                    updateItem(item.id, "eCashbackEarnRateBase", e.target.value)
+                  }
+                  className="w-full p-2 border rounded text-black"
+                  placeholder="$100"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium mb-1 text-black">
+                  Spend Rate Per Base
+                </label>
+                <input
+                  type="number"
+                  value={item.eCashbackSpendRatePerBase ?? ""}
+                  onChange={(e) =>
+                    updateItem(
+                      item.id,
+                      "eCashbackSpendRatePerBase",
+                      e.target.value,
+                    )
+                  }
+                  className="w-full p-2 border rounded text-black"
+                  placeholder="$20"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium mb-1 text-black">
+                  Spend Rate Base
+                </label>
+                <input
+                  type="number"
+                  value={item.eCashbackSpendRateBase ?? ""}
+                  onChange={(e) =>
+                    updateItem(
+                      item.id,
+                      "eCashbackSpendRateBase",
+                      e.target.value,
+                    )
+                  }
+                  className="w-full p-2 border rounded text-black"
+                  placeholder="$100"
+                />
+              </div>
+            </div>
+            {items.length > 1 && (
+              <button
+                onClick={() => removeItem(item.id)}
+                className="px-4 py-2 bg-red-500 text-white rounded hover:bg-red-600"
+              >
+                Remove Item
+              </button>
+            )}
+          </div>
+        ))}
+      </div>
+
+      <div className="mt-4 space-x-4">
+        <button
+          onClick={addItem}
+          className="px-4 py-2 bg-gray-500 text-white rounded hover:bg-gray-600"
         >
-          <Image
-            aria-hidden
-            src="/file.svg"
-            alt="File icon"
-            width={16}
-            height={16}
-          />
-          Learn
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
+          Add Item
+        </button>
+        <button
+          onClick={calculateLowestSum}
+          className="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600"
         >
-          <Image
-            aria-hidden
-            src="/window.svg"
-            alt="Window icon"
-            width={16}
-            height={16}
-          />
-          Examples
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/globe.svg"
-            alt="Globe icon"
-            width={16}
-            height={16}
-          />
-          Go to nextjs.org →
-        </a>
-      </footer>
+          Calculate Lowest Sum
+        </button>
+      </div>
+
+      {result && (
+        <div className="mt-4 p-4 border rounded-lg bg-gray-50">
+          <h3 className="text-lg font-semibold mb-4">Calculation Results</h3>
+
+          <div className="overflow-x-auto">
+            <table className="min-w-full table-auto border-collapse">
+              <thead className="bg-gray-100">
+                <tr>
+                  <th className="px-4 py-2 text-left border">Name</th>
+                  <th className="px-4 py-2 text-left border">Action</th>
+                  <th className="px-4 py-2 text-right border">Cost</th>
+                </tr>
+              </thead>
+              <tbody>
+                {result.items.map((item: Item, index: number) => (
+                  <tr key={index} className="border-b hover:bg-gray-50">
+                    <td className="px-4 py-2 border">{item.name}</td>
+                    <td className="px-4 py-2 border">
+                      <span
+                        className={`inline-block px-2 py-1 rounded text-sm ${
+                          item.action === "earn"
+                            ? "bg-green-100 text-green-800"
+                            : "bg-blue-100 text-blue-800"
+                        }`}
+                      >
+                        {item.action}
+                      </span>
+                    </td>
+                    <td className="px-4 py-2 text-right border">
+                      ${item.cost}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+
+          <div className="mt-6 grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div className="p-4 bg-white rounded-lg border">
+              <div className="text-sm text-gray-600">Initial Cost</div>
+              <div className="text-xl font-semibold">${result.initialCost}</div>
+            </div>
+            <div className="p-4 bg-white rounded-lg border">
+              <div className="text-sm text-gray-600">Final Cost</div>
+              <div className="text-xl font-semibold text-green-600">
+                ${result.finalCost}
+              </div>
+            </div>
+            <div className="p-4 bg-white rounded-lg border">
+              <div className="text-sm text-gray-600">E-Cashback Left</div>
+              <div className="text-xl font-semibold">${result.eCashback}</div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
