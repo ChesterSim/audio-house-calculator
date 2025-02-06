@@ -6,6 +6,7 @@ type ItemConfig = {
   eCashbackSpendRatePerBase: number;
   eCashbackEarnRateBase: number;
   eCashbackSpendRateBase: number;
+  cashbackApplied?: number;
 };
 
 export class Item implements ItemConfig {
@@ -16,6 +17,7 @@ export class Item implements ItemConfig {
   eCashbackSpendRatePerBase: number;
   eCashbackEarnRateBase: number;
   eCashbackSpendRateBase: number;
+  cashbackApplied?: number;
 
   constructor(config: ItemConfig) {
     this.cost = config.cost;
@@ -53,9 +55,10 @@ export class Item implements ItemConfig {
     });
   }
 
-  spendCashback(): Item {
+  spendCashback(cashbackApplied: number): Item {
     const cloneItem = this.clone();
     cloneItem.action = "spend";
+    cloneItem.cashbackApplied = cashbackApplied;
     return cloneItem;
   }
 
@@ -82,15 +85,15 @@ export class ItemsTracker {
   }
 
   addItemSpendCashback(item: Item): ItemsTracker {
-    const maxECashbackApplicable = Math.min(
+    const eCashbackApplicable = Math.min(
       item.maxECashbackApplicable,
       this.eCashback,
     );
 
     return new ItemsTracker(
-      [...this.items, item.spendCashback()],
-      this.eCashback - maxECashbackApplicable,
-      this.finalCost + item.cost - maxECashbackApplicable,
+      [...this.items, item.spendCashback(eCashbackApplicable)],
+      this.eCashback - eCashbackApplicable,
+      this.finalCost + item.cost - eCashbackApplicable,
     );
   }
 
@@ -125,6 +128,9 @@ function getLowestSumPossible(
   }
 
   if (items.length === 1) {
+    if (itemsTracker.items.length === 0) {
+      return itemsTracker.addItemEarnCashback(items[0]);
+    }
     return itemsTracker.addItemSpendCashback(items[0]);
   }
 
@@ -160,6 +166,10 @@ function getLowestSumPossible(
   }
 
   const cheapestItemsTracker = firstItemsCheapest.reduce((acc, curr) => {
+    if (acc.finalCost === curr.finalCost) {
+      return acc.eCashback > curr.eCashback ? acc : curr;
+    }
+
     return acc.finalCost < curr.finalCost ? acc : curr;
   }, new ItemsTracker([], 0, Number.MAX_SAFE_INTEGER));
 

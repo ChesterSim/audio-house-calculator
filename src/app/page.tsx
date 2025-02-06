@@ -21,25 +21,44 @@ type GlobalRates = {
 };
 
 export default function Home() {
-  const [globalRates, setGlobalRates] = useState<GlobalRates>({
-    eCashbackEarnRatePerBase: 20,
-    eCashbackEarnRateBase: 100,
-    eCashbackSpendRatePerBase: 20,
-    eCashbackSpendRateBase: 100,
+  const [globalRates, setGlobalRates] = useState<GlobalRates>(() => {
+    if (typeof window === "undefined")
+      return {
+        eCashbackEarnRatePerBase: 20,
+        eCashbackEarnRateBase: 100,
+        eCashbackSpendRatePerBase: 20,
+        eCashbackSpendRateBase: 100,
+      };
+
+    return JSON.parse(
+      localStorage.getItem("globalRates") ||
+        JSON.stringify({
+          eCashbackEarnRatePerBase: 20,
+          eCashbackEarnRateBase: 100,
+          eCashbackSpendRatePerBase: 20,
+          eCashbackSpendRateBase: 100,
+        }),
+    );
   });
 
-  const [items, setItems] = useState<FormItem[]>([]);
+  const [items, setItems] = useState<FormItem[]>(() => {
+    if (typeof window === "undefined") return [];
+    return JSON.parse(localStorage.getItem("items") || "[]");
+  });
+
   const [result, setResult] = useState<ItemsTracker | null>(null);
 
   const updateGlobalRate = (field: keyof GlobalRates, value: string) => {
-    setGlobalRates({
+    const newRates = {
       ...globalRates,
       [field]: value === "" ? 1 : Number(value),
-    });
+    };
+    setGlobalRates(newRates);
+    localStorage.setItem("globalRates", JSON.stringify(newRates));
   };
 
   const addItem = () => {
-    setItems([
+    const newItems = [
       ...items,
       {
         id: Math.random().toString(),
@@ -50,12 +69,16 @@ export default function Home() {
         eCashbackSpendRatePerBase: null,
         eCashbackSpendRateBase: null,
       },
-    ]);
+    ];
+    setItems(newItems);
+    localStorage.setItem("items", JSON.stringify(newItems));
   };
 
   const removeItem = (id: string) => {
     if (items.length > 1) {
-      setItems(items.filter((item) => item.id !== id));
+      const newItems = items.filter((item) => item.id !== id);
+      setItems(newItems);
+      localStorage.setItem("items", JSON.stringify(newItems));
     }
   };
 
@@ -64,17 +87,17 @@ export default function Home() {
     field: keyof FormItem,
     value: string | number,
   ) => {
-    setItems(
-      items.map((item) =>
-        item.id === id
-          ? {
-              ...item,
-              [field]:
-                field === "name" ? value : value === "" ? null : Number(value),
-            }
-          : item,
-      ),
+    const newItems = items.map((item) =>
+      item.id === id
+        ? {
+            ...item,
+            [field]:
+              field === "name" ? value : value === "" ? null : Number(value),
+          }
+        : item,
     );
+    setItems(newItems);
+    localStorage.setItem("items", JSON.stringify(newItems));
   };
 
   const calculateLowestSum = () => {
@@ -104,12 +127,13 @@ export default function Home() {
 
   return (
     <div className="container mx-auto p-4 text-black">
+      <h1 className="text-2xl font-bold mb-4">Audio House Calculator</h1>
       <div className="mb-8 p-4 border rounded-lg shadow-sm bg-white">
         <h2 className="text-lg font-semibold mb-4">Global Settings</h2>
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
           <div>
             <label className="block text-sm font-medium mb-1 text-black">
-              Global Earn Rate Per Base
+              Earn Rate Per Base
             </label>
             <input
               type="number"
@@ -123,7 +147,7 @@ export default function Home() {
           </div>
           <div>
             <label className="block text-sm font-medium mb-1 text-black">
-              Global Earn Rate Base
+              Earn Rate Base
             </label>
             <input
               type="number"
@@ -137,7 +161,7 @@ export default function Home() {
           </div>
           <div>
             <label className="block text-sm font-medium mb-1 text-black">
-              Global Spend Rate Per Base
+              Spend Rate Per Base
             </label>
             <input
               type="number"
@@ -151,7 +175,7 @@ export default function Home() {
           </div>
           <div>
             <label className="block text-sm font-medium mb-1 text-black">
-              Global Spend Rate Base
+              Spend Rate Base
             </label>
             <input
               type="number"
@@ -318,7 +342,9 @@ export default function Home() {
                             : "bg-blue-100 text-blue-800"
                         }`}
                       >
-                        {item.action}
+                        {item.action === "earn"
+                          ? `Earn Cashback: $${item.eCashbackEarned}`
+                          : `Spend Cashback: $${item.cashbackApplied}`}
                       </span>
                     </td>
                     <td className="px-4 py-2 text-right border">
